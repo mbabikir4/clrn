@@ -11,7 +11,6 @@ import type {
   DatasetAnalytics,
   Department,
   InlineModelResult,
-  Sensitivity,
 } from '../types';
 
 /** Tiny deterministic PRNG so charts are stable per dataset (no Math.random). */
@@ -198,15 +197,11 @@ export const REGION_PROFILES: Record<string, RegionProfile> = {
 };
 
 /** Run mocked compliance checks for a dataset under a region profile. */
-export function runComplianceChecks(
-  datasetId: string,
-  sensitivity: Sensitivity,
-  regionKey: string,
-): ComplianceReport {
+export function runComplianceChecks(datasetId: string, regionKey: string): ComplianceReport {
   const profile = REGION_PROFILES[regionKey] ?? REGION_PROFILES.KSA;
   const rnd = seeded(datasetId + ':' + regionKey);
-  // More sensitive data is more likely to flag a control (purely cosmetic logic).
-  const flagBias = sensitivity === 'Restricted' ? 0.45 : sensitivity === 'Confidential' ? 0.25 : 0.1;
+  // All data is classified Internal — small, uniform chance of a flagged control.
+  const flagBias = 0.1;
 
   const checks = profile.controls.map((control) => {
     const flagged = rnd() < flagBias;

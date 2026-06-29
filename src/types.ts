@@ -21,8 +21,11 @@ export type Department =
   | 'Wealth Management'
   | 'Risk Management';
 
-/** Clearance / data-sensitivity classification levels (low → high). */
-export type ClearanceLevel = 'Public' | 'Internal' | 'Confidential' | 'Restricted';
+/**
+ * Data classification. Simplified to a single level — all data is "Internal".
+ * (Other levels like Confidential/Restricted were removed.)
+ */
+export type ClearanceLevel = 'Internal';
 
 export interface User {
   id: string; // Work ID, e.g. "WID-1001"

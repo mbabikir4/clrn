@@ -22,18 +22,13 @@ export const ROLE_COLOR: Record<Role, string> = {
   Admin: 'bg-brand-100 text-brand-700',
 };
 
+// Single classification level — all data is Internal.
 export const CLEARANCE_COLOR: Record<ClearanceLevel, string> = {
-  Public: 'bg-slate-100 text-slate-500',
   Internal: 'bg-brand-100 text-brand-700',
-  Confidential: 'bg-brand-100 text-brand-800',
-  Restricted: 'bg-brand-200 text-brand-900',
 };
 
 export const CLEARANCE_RANK: Record<ClearanceLevel, number> = {
-  Public: 0,
-  Internal: 1,
-  Confidential: 2,
-  Restricted: 3,
+  Internal: 0,
 };
 
 export const DEPARTMENTS = [
@@ -44,7 +39,7 @@ export const DEPARTMENTS = [
   'Risk Management',
 ] as const;
 
-export const SENSITIVITIES = ['Public', 'Internal', 'Confidential', 'Restricted'] as const;
+export const SENSITIVITIES = ['Internal'] as const;
 
 // Roles that Governance can grant view access to. "Consumer" effectively means
 // "all employees" (everyone holds it); the rest scope access to a function.

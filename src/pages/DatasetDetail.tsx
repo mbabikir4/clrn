@@ -28,7 +28,7 @@ export function DatasetDetail() {
   const [requested, setRequested] = useState(false);
 
   const compliance = useMemo(
-    () => (dataset ? runComplianceChecks(dataset.id, dataset.sensitivity, store.session.regionKey) : null),
+    () => (dataset ? runComplianceChecks(dataset.id, store.session.regionKey) : null),
     [dataset, store.session.regionKey],
   );
 

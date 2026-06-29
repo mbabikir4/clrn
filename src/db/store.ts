@@ -301,7 +301,7 @@ export const useStore = create<MarketState>()(
           };
         }),
     }),
-    { name: 'clr-data-marketplace', version: 2 },
+    { name: 'clr-data-marketplace', version: 3 },
   ),
 );
 

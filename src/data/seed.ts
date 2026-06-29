@@ -25,7 +25,7 @@ export const seedUsers: User[] = [
     roles: ['Provider', 'Consumer'],
     department: 'Retail Banking',
     supervisorId: 'WID-1010',
-    clearance: 'Confidential',
+    clearance: 'Internal',
     offNetwork: false,
   },
   {
@@ -47,7 +47,7 @@ export const seedUsers: User[] = [
     roles: ['Provider', 'Consumer'],
     department: 'Investment Banking',
     supervisorId: 'WID-1011',
-    clearance: 'Confidential',
+    clearance: 'Internal',
     offNetwork: true, // demo: flagged off the corporate network
   },
   {
@@ -58,7 +58,7 @@ export const seedUsers: User[] = [
     roles: ['Provider', 'Consumer'],
     department: 'Wealth Management',
     supervisorId: 'WID-1011',
-    clearance: 'Restricted',
+    clearance: 'Internal',
     offNetwork: false,
   },
   // Managers (org structure only — no longer an approval gate)
@@ -70,7 +70,7 @@ export const seedUsers: User[] = [
     roles: ['Supervisor', 'Provider', 'Consumer'],
     department: 'Retail Banking',
     supervisorId: 'WID-1099',
-    clearance: 'Confidential',
+    clearance: 'Internal',
     offNetwork: false,
   },
   {
@@ -81,7 +81,7 @@ export const seedUsers: User[] = [
     roles: ['Supervisor', 'Provider', 'Consumer'],
     department: 'Investment Banking',
     supervisorId: 'WID-1099',
-    clearance: 'Confidential',
+    clearance: 'Internal',
     offNetwork: false,
   },
   // Risk Management (a department/role that data can be shared with)
@@ -93,7 +93,7 @@ export const seedUsers: User[] = [
     roles: ['Risk', 'Provider', 'Consumer'],
     department: 'Risk Management',
     supervisorId: 'WID-1099',
-    clearance: 'Restricted',
+    clearance: 'Internal',
     offNetwork: false,
   },
   // Governance (defines access groups + checklist; approves requests)
@@ -105,7 +105,7 @@ export const seedUsers: User[] = [
     roles: ['Governance', 'Consumer'],
     department: 'Investment Banking',
     supervisorId: 'WID-1099',
-    clearance: 'Restricted',
+    clearance: 'Internal',
     offNetwork: false,
   },
   // Data Department (approves heavy AI models)
@@ -117,7 +117,7 @@ export const seedUsers: User[] = [
     roles: ['DataDept', 'Consumer'],
     department: 'Wealth Management',
     supervisorId: 'WID-1099',
-    clearance: 'Confidential',
+    clearance: 'Internal',
     offNetwork: false,
   },
   // Admin
@@ -129,7 +129,7 @@ export const seedUsers: User[] = [
     roles: ['Admin', 'Consumer'],
     department: 'Retail Banking',
     supervisorId: 'WID-1099',
-    clearance: 'Restricted',
+    clearance: 'Internal',
     offNetwork: false,
   },
   {
@@ -140,7 +140,7 @@ export const seedUsers: User[] = [
     roles: ['Supervisor', 'Consumer'],
     department: 'Risk Management',
     supervisorId: null,
-    clearance: 'Restricted',
+    clearance: 'Internal',
     offNetwork: false,
   },
 ];
@@ -178,7 +178,7 @@ export const seedDatasets: Dataset[] = [
     description:
       'Unified view of individual customers: accounts, loans, mortgages and engagement signals across Retail Banking.',
     department: 'Retail Banking',
-    sensitivity: 'Confidential',
+    sensitivity: 'Internal',
     ownerId: 'WID-1001',
     stewardId: 'WID-3001',
     createdAt: '2026-05-02T09:00:00.000Z',
@@ -212,7 +212,7 @@ export const seedDatasets: Dataset[] = [
     name: 'M&A Deal Pipeline',
     description: 'Capital-markets and M&A advisory pipeline: deal stages, sectors and probabilities.',
     department: 'Investment Banking',
-    sensitivity: 'Restricted',
+    sensitivity: 'Internal',
     ownerId: 'WID-1003',
     stewardId: 'WID-3001',
     createdAt: '2026-05-18T09:00:00.000Z',
@@ -230,7 +230,7 @@ export const seedDatasets: Dataset[] = [
     description:
       'High-net-worth client portfolios, AUM, risk appetite and estate-planning attributes for Wealth Management.',
     department: 'Wealth Management',
-    sensitivity: 'Restricted',
+    sensitivity: 'Internal',
     ownerId: 'WID-1004',
     stewardId: 'WID-3001',
     createdAt: '2026-06-01T09:00:00.000Z',
@@ -247,7 +247,7 @@ export const seedDatasets: Dataset[] = [
     name: 'Credit Risk Exposures',
     description: 'Credit and operational risk exposures with PD/LGD/EAD and capital charges.',
     department: 'Risk Management',
-    sensitivity: 'Confidential',
+    sensitivity: 'Internal',
     ownerId: 'WID-2001',
     stewardId: 'WID-3001',
     createdAt: '2026-06-08T09:00:00.000Z',
@@ -265,7 +265,7 @@ export const seedDatasets: Dataset[] = [
     description:
       'Early-warning signals for mortgage defaults. Submitted by Retail Banking, awaiting Governance to define access.',
     department: 'Retail Banking',
-    sensitivity: 'Confidential',
+    sensitivity: 'Internal',
     ownerId: 'WID-1001',
     stewardId: 'WID-3001',
     createdAt: '2026-06-20T09:00:00.000Z',

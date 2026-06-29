@@ -100,9 +100,9 @@ groups → request → governance approval (grants department) → access → au
    datasets your group can access.
 
 2. **Publish (provider)** — As any provider (e.g. `WID-1001`), go to **Publish**. Add
-   metadata: name, description, owning department, **nature/sensitivity**, the **named person
-   responsible for clearing it (steward)**, tags, and columns. On submit the dataset is
-   **routed to Governance** (status *Pending Governance*) and isn't in the catalog yet.
+   metadata: name, description, owning department, the **named person responsible for clearing
+   it (steward)**, tags, and columns. All data is classified **Internal**. On submit the dataset
+   is **routed to Governance** (status *Pending Governance*) and isn't in the catalog yet.
 
 3. **Governance: checklist + access groups** — Log in as **Governance `WID-3001`** →
    **Governance console**. For the new dataset, tick the **governance checklist**

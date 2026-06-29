@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { currentUser, useStore } from '../db/store';
-import type { Department, Sensitivity } from '../types';
-import { DEPARTMENTS, SENSITIVITIES } from '../lib/labels';
+import type { Department } from '../types';
+import { DEPARTMENTS } from '../lib/labels';
 import { sampleColumnsFor } from '../services/mocks';
 import { SectionTitle } from '../components/ui';
 
@@ -16,7 +16,6 @@ export function Publish() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [department, setDepartment] = useState<Department>(user.department);
-  const [sensitivity, setSensitivity] = useState<Sensitivity>('Confidential');
   const [stewardId, setStewardId] = useState('WID-3001'); // default: Governance
   const [tags, setTags] = useState('');
   const [columns, setColumns] = useState(sampleColumnsFor(user.department).join(', '));
@@ -31,7 +30,7 @@ export function Publish() {
       name: name.trim(),
       description: description.trim(),
       department,
-      sensitivity,
+      sensitivity: 'Internal', // all data is classified Internal
       stewardId,
       tags: tags
         .split(',')
@@ -76,31 +75,18 @@ export function Publish() {
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="label">Owning department</label>
-            <select
-              className="input"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value as Department)}
-            >
-              {DEPARTMENTS.map((d) => (
-                <option key={d}>{d}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Nature / sensitivity</label>
-            <select
-              className="input"
-              value={sensitivity}
-              onChange={(e) => setSensitivity(e.target.value as Sensitivity)}
-            >
-              {SENSITIVITIES.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="label">Owning department</label>
+          <select
+            className="input"
+            value={department}
+            onChange={(e) => setDepartment(e.target.value as Department)}
+          >
+            {DEPARTMENTS.map((d) => (
+              <option key={d}>{d}</option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">All data is classified Internal.</p>
         </div>
 
         <div>

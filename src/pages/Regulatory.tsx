@@ -14,7 +14,7 @@ export function Regulatory() {
 
   const reports = store.datasets.map((d) => ({
     dataset: d,
-    report: runComplianceChecks(d.id, d.sensitivity, regionKey),
+    report: runComplianceChecks(d.id, regionKey),
   }));
 
   return (
