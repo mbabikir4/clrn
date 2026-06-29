@@ -1,8 +1,7 @@
-// Consumer view of their own clearance + model requests and live status.
+// Consumer view of their own access + model requests and their status.
 import { Link } from 'react-router-dom';
 import { currentUser, useStore } from '../db/store';
 import { Empty, SectionTitle, StatusBadge } from '../components/ui';
-import { ClearanceTimeline } from '../components/ClearanceTimeline';
 
 export function MyRequests() {
   const store = useStore();
@@ -14,35 +13,38 @@ export function MyRequests() {
     <div className="space-y-6">
       <SectionTitle
         title="My requests"
-        subtitle="Track your clearance requests through Supervisor → Risk → Governance."
+        subtitle="Access requests are reviewed by Governance in a single step."
       />
 
       <div className="card p-6">
-        <h3 className="mb-4 font-semibold text-slate-900">Clearance requests</h3>
+        <h3 className="mb-4 font-semibold text-slate-900">Access requests</h3>
         {myRequests.length === 0 ? (
           <Empty>
-            You have no clearance requests. Find data in the{' '}
+            You have no access requests. Find data in the{' '}
             <Link to="/marketplace" className="text-brand-600 underline">
               marketplace
             </Link>
             .
           </Empty>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2 text-sm">
             {myRequests.map((r) => {
               const ds = store.datasets.find((d) => d.id === r.datasetId);
               return (
-                <div key={r.id} className="rounded-lg border border-slate-200 p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <Link
-                      to={`/dataset/${r.datasetId}`}
-                      className="font-medium text-slate-800 hover:underline"
-                    >
+                <div
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2"
+                >
+                  <div>
+                    <Link to={`/dataset/${r.datasetId}`} className="font-medium text-slate-800 hover:underline">
                       {ds?.name}
                     </Link>
-                    <StatusBadge status={r.currentStage} />
+                    <div className="text-xs text-slate-500">
+                      For {r.requesterDepartment} — “{r.reason}”
+                      {r.note ? ` · ${r.note}` : ''}
+                    </div>
                   </div>
-                  <ClearanceTimeline request={r} users={store.users} />
+                  <StatusBadge status={r.status} />
                 </div>
               );
             })}

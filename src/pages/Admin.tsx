@@ -55,7 +55,7 @@ export function Admin() {
                   <td className="px-3 py-2">
                     <button
                       className={`badge ${
-                        u.offNetwork ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                        u.offNetwork ? 'bg-slate-200 text-slate-600' : 'bg-brand-100 text-brand-700'
                       }`}
                       onClick={() => store.toggleOffNetwork(u.id)}
                       title="Toggle mocked network flag"

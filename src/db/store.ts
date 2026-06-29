@@ -1,11 +1,14 @@
 // ---------------------------------------------------------------------------
 // In-browser "database" + simulated "backend" service layer.
 //
-// For this PoC there is no server: a Zustand store persisted to localStorage
-// plays the role of both the database (state) and the backend (the action
-// methods below contain all business logic — auth, governance, the clearance
-// workflow, etc.). This keeps the app fully client-side and zero-install while
-// still cleanly separating "API calls" (store actions) from UI (components).
+// No server: a Zustand store persisted to localStorage is both the database
+// (state) and the backend (the action methods hold all business logic). This
+// keeps the app fully client-side and zero-install.
+//
+// Access model (v2): GROUP-based, not per-person. A dataset lists allowed
+// departments and/or roles; Governance owns those lists plus a per-dataset
+// governance checklist. Out-of-group users make a one-step request that
+// Governance grants by adding their department.
 // ---------------------------------------------------------------------------
 
 import { create } from 'zustand';
@@ -13,7 +16,6 @@ import { persist } from 'zustand/middleware';
 import type {
   AccessRequest,
   AuditEntry,
-  ClearanceStep,
   Dataset,
   Department,
   ModelRequest,
@@ -28,13 +30,12 @@ import {
   seedRequests,
   seedUsers,
 } from '../data/seed';
+import { freshChecklist } from '../lib/access';
 import {
   generateAnalytics,
   generateInlineModels,
   generateSampleRows,
 } from '../services/mocks';
-
-const STAGE_ORDER: ClearanceStep['stage'][] = ['Supervisor', 'Risk', 'Governance'];
 
 function uid(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)
@@ -52,10 +53,15 @@ export interface PublishInput {
   columns: string[];
 }
 
+/** Fields Governance may update on a dataset. */
+export type GovernancePatch = Partial<
+  Pick<Dataset, 'allowedDepartments' | 'allowedRoles' | 'governance' | 'status'>
+>;
+
 interface Session {
   userId: string | null;
-  twoFactorPending: boolean; // true between password check and 2FA confirmation
-  regionKey: string; // active regulatory region (default "KSA")
+  twoFactorPending: boolean;
+  regionKey: string;
 }
 
 interface MarketState {
@@ -66,34 +72,32 @@ interface MarketState {
   audit: AuditEntry[];
   session: Session;
 
-  // --- auth ---
+  // auth
   login: (workId: string, password: string) => { ok: boolean; error?: string };
   verifyTwoFactor: (code: string) => { ok: boolean; error?: string };
   logout: () => void;
 
-  // --- demo/admin toggles ---
+  // demo/admin
   toggleOffNetwork: (userId: string) => void;
   setRegion: (regionKey: string) => void;
   resetDemo: () => void;
 
-  // --- provider ---
+  // provider
   publishDataset: (ownerId: string, input: PublishInput) => string;
 
-  // --- governance (ACL ownership) ---
-  governanceSetAcl: (datasetId: string, acl: string[], byUserId: string) => void;
-  governanceAddToAcl: (datasetId: string, userId: string, byUserId: string) => void;
-  governanceRemoveFromAcl: (datasetId: string, userId: string, byUserId: string) => void;
+  // governance (group-based access + checklist)
+  governanceUpdate: (datasetId: string, patch: GovernancePatch, byUserId: string) => void;
 
-  // --- consumer clearance workflow ---
+  // consumer one-step request
   requestAccess: (datasetId: string, requesterId: string, reason: string) => string;
-  decideClearanceStep: (
+  decideRequest: (
     requestId: string,
     approverId: string,
-    decision: 'approved' | 'denied',
+    decision: 'granted' | 'denied',
     note: string,
   ) => void;
 
-  // --- heavy AI models (Data Department) ---
+  // heavy AI models (Data Department)
   requestModel: (datasetId: string, requesterId: string, modelName: string) => string;
   decideModelRequest: (
     requestId: string,
@@ -125,14 +129,10 @@ export const useStore = create<MarketState>()(
         const user = get().users.find((u) => u.id.toLowerCase() === workId.trim().toLowerCase());
         if (!user) return { ok: false, error: 'Unknown Work ID.' };
         if (user.password !== password) return { ok: false, error: 'Incorrect password.' };
-        // Password OK → move to the mocked 2-factor step.
-        set((s) => ({ session: { ...s.session, userId: null, twoFactorPending: true } }));
-        // Stash the candidate id on the session via a temp field encoded in userId.
         set((s) => ({ session: { ...s.session, userId: user.id, twoFactorPending: true } }));
         return { ok: true };
       },
       verifyTwoFactor: (code) => {
-        // Any non-empty code (or the "approve" button passing "approve") works.
         if (!code.trim()) return { ok: false, error: 'Enter any code or approve the push.' };
         const s = get();
         if (!s.session.userId) return { ok: false, error: 'Session expired, sign in again.' };
@@ -175,10 +175,12 @@ export const useStore = create<MarketState>()(
           stewardId: input.stewardId,
           createdAt: new Date().toISOString(),
           tags: input.tags,
-          status: 'PendingGovernance', // must go through Governance before broad access
-          acl: [ownerId], // owner can always see their own data
-          analytics: generateAnalytics(id, input.columns), // auto-generated on upload
-          inlineModels: generateInlineModels(id), // inline models run automatically
+          status: 'PendingGovernance', // Governance must define access first
+          allowedDepartments: [], // owner still sees their own data (canView)
+          allowedRoles: [],
+          governance: freshChecklist(),
+          analytics: generateAnalytics(id, input.columns),
+          inlineModels: generateInlineModels(id),
           heavyModelsEnabled: [],
           sampleColumns: sample.columns,
           sampleRows: sample.rows,
@@ -190,95 +192,72 @@ export const useStore = create<MarketState>()(
         return id;
       },
 
-      // ----- governance: ACL --------------------------------------------
-      governanceSetAcl: (datasetId, acl, byUserId) =>
+      // ----- governance: access groups + checklist ----------------------
+      governanceUpdate: (datasetId, patch, byUserId) =>
         set((s) => ({
-          datasets: s.datasets.map((d) =>
-            d.id === datasetId
-              ? { ...d, acl: Array.from(new Set([d.ownerId, ...acl])), status: 'Published' }
-              : d,
+          datasets: s.datasets.map((d) => (d.id === datasetId ? { ...d, ...patch } : d)),
+          audit: logAudit(
+            s,
+            byUserId,
+            patch.status === 'Published'
+              ? 'Published dataset (governance)'
+              : 'Updated governance / access groups',
+            datasetId,
           ),
-          audit: logAudit(s, byUserId, 'Set ACL & published dataset', datasetId),
-        })),
-      governanceAddToAcl: (datasetId, userId, byUserId) =>
-        set((s) => ({
-          datasets: s.datasets.map((d) =>
-            d.id === datasetId ? { ...d, acl: Array.from(new Set([...d.acl, userId])) } : d,
-          ),
-          audit: logAudit(s, byUserId, `Granted ACL access to ${userId}`, datasetId),
-        })),
-      governanceRemoveFromAcl: (datasetId, userId, byUserId) =>
-        set((s) => ({
-          datasets: s.datasets.map((d) =>
-            d.id === datasetId
-              ? { ...d, acl: d.acl.filter((x) => x !== userId || x === d.ownerId) }
-              : d,
-          ),
-          audit: logAudit(s, byUserId, `Revoked ACL access for ${userId}`, datasetId),
         })),
 
-      // ----- consumer: clearance workflow -------------------------------
+      // ----- consumer: one-step request ---------------------------------
       requestAccess: (datasetId, requesterId, reason) => {
         const id = uid('REQ');
-        const steps: ClearanceStep[] = STAGE_ORDER.map((stage) => ({
-          stage,
-          decidedBy: null,
-          decision: 'pending',
-          note: '',
-          decidedAt: null,
-        }));
+        const requester = get().users.find((u) => u.id === requesterId)!;
         const req: AccessRequest = {
           id,
           datasetId,
           requesterId,
+          requesterDepartment: requester.department,
           reason,
-          currentStage: 'Supervisor',
-          steps,
+          status: 'pending',
+          decidedBy: null,
+          note: '',
           createdAt: new Date().toISOString(),
         };
         set((s) => ({
           requests: [req, ...s.requests],
-          audit: logAudit(s, requesterId, 'Requested clearance', datasetId),
+          audit: logAudit(s, requesterId, 'Requested access', datasetId),
         }));
         return id;
       },
-      decideClearanceStep: (requestId, approverId, decision, note) =>
+      decideRequest: (requestId, approverId, decision, note) =>
         set((s) => {
-          const requests = s.requests.map((r) => {
-            if (r.id !== requestId) return r;
-            if (r.currentStage === 'Granted' || r.currentStage === 'Denied') return r;
-            const steps = r.steps.map((st) =>
-              st.stage === r.currentStage
-                ? { ...st, decidedBy: approverId, decision, note, decidedAt: new Date().toISOString() }
-                : st,
-            );
-            if (decision === 'denied') {
-              return { ...r, steps, currentStage: 'Denied' as const };
-            }
-            // advance to the next stage, or grant if Governance just approved
-            const idx = STAGE_ORDER.indexOf(r.currentStage as ClearanceStep['stage']);
-            const next = STAGE_ORDER[idx + 1];
-            return { ...r, steps, currentStage: (next ?? 'Granted') as AccessRequest['currentStage'] };
-          });
-
-          // If a request just became Granted, add the requester to the ACL.
-          const justGranted = requests.find(
-            (r) => r.id === requestId && r.currentStage === 'Granted',
+          const req = s.requests.find((r) => r.id === requestId);
+          const requests = s.requests.map((r) =>
+            r.id === requestId ? { ...r, status: decision, decidedBy: approverId, note } : r,
           );
           let datasets = s.datasets;
-          if (justGranted) {
+          if (req && decision === 'granted') {
+            // Grant by adding the requester's DEPARTMENT to the allowed list.
             datasets = s.datasets.map((d) =>
-              d.id === justGranted.datasetId
-                ? { ...d, acl: Array.from(new Set([...d.acl, justGranted.requesterId])) }
+              d.id === req.datasetId
+                ? {
+                    ...d,
+                    allowedDepartments: Array.from(
+                      new Set([...d.allowedDepartments, req.requesterDepartment]),
+                    ),
+                  }
                 : d,
             );
           }
-
-          const stageLabel = justGranted ? 'Granted access (added to ACL)' : `Decision: ${decision}`;
           return {
             requests,
             datasets,
-            audit: logAudit(s, approverId, stageLabel, requestId),
+            audit: logAudit(
+              s,
+              approverId,
+              decision === 'granted'
+                ? `Granted access to ${req?.requesterDepartment}`
+                : 'Denied access request',
+              requestId,
+            ),
           };
         }),
 
@@ -322,15 +301,12 @@ export const useStore = create<MarketState>()(
           };
         }),
     }),
-    {
-      name: 'clr-data-marketplace',
-      version: 1,
-    },
+    { name: 'clr-data-marketplace', version: 2 },
   ),
 );
 
 // ---------------------------------------------------------------------------
-// Selectors / pure helpers (kept outside the store so components can reuse them)
+// Selectors / pure helpers
 // ---------------------------------------------------------------------------
 
 export function currentUser(s: Pick<MarketState, 'users' | 'session'>): User | null {
@@ -346,21 +322,13 @@ export function hasRole(user: User | null | undefined, role: Role): boolean {
   return !!user?.roles.includes(role);
 }
 
-export function hasAccess(dataset: Dataset, userId: string | null | undefined): boolean {
-  if (!userId) return false;
-  return dataset.acl.includes(userId);
-}
-
-/** Open access request (if any) for a given user + dataset. */
+/** Pending request (if any) for a given user + dataset. */
 export function openRequestFor(
   requests: AccessRequest[],
   datasetId: string,
   userId: string,
 ): AccessRequest | undefined {
   return requests.find(
-    (r) =>
-      r.datasetId === datasetId &&
-      r.requesterId === userId &&
-      r.currentStage !== 'Denied',
+    (r) => r.datasetId === datasetId && r.requesterId === userId && r.status === 'pending',
   );
 }

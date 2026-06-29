@@ -40,30 +40,28 @@ export interface User {
 /** Sensitivity declared by the provider when publishing. */
 export type Sensitivity = ClearanceLevel;
 
-/** A request for someone to be added to a dataset's ACL. */
-export type RequestStage =
-  | 'Supervisor' // awaiting supervisor/manager sign-off
-  | 'Risk' // awaiting Risk Management review
-  | 'Governance' // awaiting Governance approval (will set ACL)
-  | 'Granted' // approved end-to-end → on the ACL
-  | 'Denied'; // rejected at some stage
-
-export interface ClearanceStep {
-  stage: RequestStage;
-  decidedBy: string | null; // Work ID of the approver
-  decision: 'pending' | 'approved' | 'denied';
-  note: string;
-  decidedAt: string | null; // ISO timestamp
-}
-
+/**
+ * One-step access request. Access is granted by group membership (department /
+ * role), so when Governance approves a request we add the requester's
+ * department to the dataset's allowed departments — not the person.
+ */
 export interface AccessRequest {
   id: string;
   datasetId: string;
   requesterId: string;
+  requesterDepartment: Department; // department to grant on approval
   reason: string;
-  currentStage: RequestStage;
-  steps: ClearanceStep[]; // ordered: Supervisor → Risk → Governance
+  status: 'pending' | 'granted' | 'denied'; // single Governance decision
+  decidedBy: string | null; // Work ID of the Governance approver
+  note: string;
   createdAt: string;
+}
+
+/** A single governance/regulatory checklist item tracked per dataset. */
+export interface ChecklistItem {
+  key: string;
+  label: string;
+  done: boolean;
 }
 
 /** A heavy/large AI-model run request routed to the Data Department. */
@@ -113,12 +111,19 @@ export interface Dataset {
   tags: string[];
   /**
    * Governance lifecycle:
-   *  - 'PendingGovernance': submitted, awaiting Governance to define the ACL
+   *  - 'PendingGovernance': submitted, awaiting Governance to define access
    *  - 'Published': Governance has defined access; visible in catalog
    */
   status: 'PendingGovernance' | 'Published';
-  /** Per-person ACL — Work IDs explicitly allowed to view the data. */
-  acl: string[];
+  /**
+   * Group-based access (replaces per-person ACLs). A user may view the data if
+   * their department is in `allowedDepartments` OR one of their roles is in
+   * `allowedRoles`. Governance owns both lists. Data is always view-only.
+   */
+  allowedDepartments: Department[];
+  allowedRoles: Role[];
+  /** Governance/regulatory checklist Governance maintains for this dataset. */
+  governance: ChecklistItem[];
   /** Mocked artifacts generated automatically on upload. */
   analytics: DatasetAnalytics;
   inlineModels: InlineModelResult[];

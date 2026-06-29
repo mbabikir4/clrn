@@ -1,10 +1,16 @@
 # CLR Data Marketplace — Proof of Concept
 
-An internal **data marketplace** web app with **governed, role-based access**. Every
-employee can publish data (provider) and consume data (consumer); dedicated roles —
-**Governance, Risk Management, Supervisor/Manager, Data Department, Admin** — gate and
-approve access. The marketplace is **free of charge but never open**: every dataset is
-governed and access is granted **per person**.
+An internal **data marketplace** web app with **governed, group-based access**. Every
+employee can publish data (provider) and consume data (consumer). **Governance** owns
+access: for each dataset it completes a checklist and chooses which **departments / roles**
+may view it. The marketplace is **free of charge but never open** — every dataset is
+governed, and data is **view-only**.
+
+> **Access model (v2):** access is granted by **group** (department or functional role),
+> **not per person**. If your department/role is on a dataset's allow-list you can view it;
+> if not, you make a **one-step request** that Governance approves (which grants your whole
+> department). This replaced the earlier per-person ACL + Supervisor→Risk→Governance chain
+> to keep the prototype simple.
 
 > ⚠️ This is a **demo / proof of concept**. All users, datasets, approvals,
 > analytics, AI results, 2FA, network detection, and compliance checks are **mocked**.
@@ -85,67 +91,65 @@ Password for all: `demo`. The login screen also has quick-login chips.
 
 ## Full flow walkthrough
 
-This is the end-to-end path the PoC demonstrates: **publish → governance sets access →
-request → supervisor → risk → governance approval → access → automatic analytics → AI model.**
+This is the end-to-end path the PoC demonstrates: **publish → governance checklist + access
+groups → request → governance approval (grants department) → access → automatic analytics → AI model.**
 
 1. **Login + 2FA** — Sign in with a Work ID + `demo`, then complete the **mocked 2-factor
-   step** (type any code or click **Approve push**). Your **role(s)** are resolved from the
-   Work ID. Your **profile** (name, ID, roles, department, supervisor, clearance, and the
-   datasets you can access) is on the **Profile** page.
+   step** (type any code or click **Approve push**). Your **role(s)** and **department** are
+   resolved from the Work ID. Your **Profile** shows identity, roles, clearance and the
+   datasets your group can access.
 
 2. **Publish (provider)** — As any provider (e.g. `WID-1001`), go to **Publish**. Add
    metadata: name, description, owning department, **nature/sensitivity**, the **named person
    responsible for clearing it (steward)**, tags, and columns. On submit the dataset is
-   **routed to Governance** and is **not broadly accessible yet** (status *Pending Governance*).
+   **routed to Governance** (status *Pending Governance*) and isn't in the catalog yet.
 
-3. **Governance sets access** — Log in as **Governance `WID-3001`** → **Governance console**.
-   Under *Awaiting access definition*, pick the **initial ACL** for the new dataset and
-   **Set ACL & publish**. A dataset isn't broadly visible until Governance has defined who can
-   see it.
+3. **Governance: checklist + access groups** — Log in as **Governance `WID-3001`** →
+   **Governance console**. For the new dataset, tick the **governance checklist**
+   (classification, regulatory reviewed, groups defined, approved-for-view), choose which
+   **departments and/or roles** may view it, then **Publish to marketplace**.
 
-4. **Request (consumer)** — Log in as someone **not on the ACL** (e.g. `WID-4001`). Open a
-   dataset in the **Marketplace**. Because you're not on the ACL, you **Request access** with a
-   business justification. Track it under **My Requests**.
+4. **Automatic access by group** — Anyone whose **department or role** is on the allow-list
+   now sees the data immediately (e.g. `WID-1001`, Retail Banking, opens **Retail Customer
+   360** — instant access, no request).
 
-5. **Supervisor sign-off (gate 1)** — Log in as the requester's **Supervisor**
-   (`WID-4001`'s manager is `WID-1099`) → **Approvals** → approve.
+5. **Request (out-of-group consumer)** — Log in as someone whose group **isn't** allowed
+   (e.g. `WID-1002`, Commercial Banking, opening the Investment-only **M&A Deal Pipeline**).
+   Click **Request access** with a justification. Track it under **My Requests**.
 
-6. **Risk Management review (gate 2)** — Log in as **Risk `WID-2001`** → **Approvals** → approve.
+6. **Governance approval (one step)** — Log in as **Governance `WID-3001`** → **Governance
+   console** → *Access requests* → **Grant to {department}**. This adds the requester's whole
+   **department** to the dataset's allow-list.
 
-7. **Governance approval (gate 3, sets ACL)** — Log in as **Governance `WID-3001`** →
-   **Governance console** → *Clearance requests for approval* → **Approve & add to ACL**.
-   This adds the person to the dataset's ACL.
+7. **Access granted** — Back as the consumer (`WID-1002`), the dataset now shows **"Your group
+   has access"** and the **view-only data preview** unlocks.
 
-8. **Access granted** — Back as the consumer (`WID-4001`), the dataset now shows
-   **"You are on the ACL"** and the **row-level data preview** unlocks.
+8. **Automatic analytics** — Every dataset shows **auto-generated** (mocked) analytics:
+   row/column counts, completeness, a column profile, and **charts**. No manual pipeline.
 
-9. **Automatic analytics** — Every dataset shows **auto-generated** (mocked) analytics:
-   row/column counts, completeness, a column profile, and **charts** (distribution, trend,
-   segments). No manual pipeline.
+9. **Inline AI models** — On a dataset you can view, **clustering, regression and anomaly
+   detection** run **inline and automatically** (mocked results + charts).
 
-10. **Inline AI models** — On a dataset you can access, **clustering, regression and anomaly
-    detection** run **inline and automatically** (mocked results + charts).
-
-11. **Heavy AI model** — For a larger model, request it from the **Data Department**. Log in as
-    **Data Dept `WID-4001`** → **Data Dept** queue → **Approve & enable**; the heavy model then
-    appears as enabled on that dataset.
+10. **Heavy AI model** — For a larger model, request it from the **Data Department**. Log in as
+    **Data Dept `WID-4001`** → **Data Dept** queue → **Approve & enable**.
 
 ### Pre-seeded shortcuts to see mid-flow states
 - `DS-006 "Mortgage Default Signals"` is **Pending Governance** (step 3 ready to try).
-- `REQ-001` is an in-flight request already **past Supervisor, awaiting Risk** — log in as
-  `WID-2001` to action it (steps 6–8).
-- `MRQ-001` is a pending **heavy-model** request — log in as `WID-4001` to action it (step 11).
+- `REQ-001` is a pending **access request** (Commercial Banking → M&A Deal Pipeline) — log in
+  as **Governance `WID-3001`** to grant it (steps 6–7).
+- `MRQ-001` is a pending **heavy-model** request — log in as `WID-4001` to action it (step 10).
 
 ---
 
 ## Roles & responsibilities
 
 - **Provider / Consumer** — every employee. Publish datasets; browse and request data.
-- **Governance** — the heart of access control. Defines each dataset's ACL, gives final
-  approval on clearance requests (which adds the person to the ACL), and manages all ACLs.
-  Dedicated **Governance console**, visible only to Governance users.
-- **Supervisor / Manager** — gate 1 of clearance (business-need sign-off).
-- **Risk Management** — gate 2 of clearance (credit/operational risk review).
+- **Governance** — the heart of access control. Per dataset: completes the **checklist**,
+  chooses the **allowed departments/roles**, publishes, and approves one-step access requests
+  (granting the requester's department). Dedicated **Governance console**, Governance-only.
+- **Risk Management** — a department/role that data can be shared with (no longer an approval
+  gate in v2).
+- **Supervisor / Manager** — org-structure role (no longer an approval gate in v2).
 - **Data Department** — approves heavy/large AI models per dataset.
 - **Admin** — user directory, network-flag toggles, security audit log, demo reset.
 
@@ -160,8 +164,8 @@ configurable** and defaults to a **Saudi Arabia (SAMA / PDPL)** profile; EU (GDP
 
 ## Security awareness (all mocked, but visibly present)
 - **Role-based access** enforced on every nav item, route, and action.
-- **ACL checks before any row-level data access** — aggregate analytics are visible in the
-  catalog, but raw data + inline models require being on the ACL.
+- **Group checks before any row-level data access** — aggregate analytics are visible in the
+  catalog, but view-only raw data + inline models require your department/role to be allowed.
 - **Mocked 2FA** step on login.
 - **Mocked network alert** — a prominent banner when a user is flagged off the corporate
   network; row-level data access is blocked while off-network. Toggle it on **Profile** or in
@@ -178,13 +182,15 @@ src/
   data/seed.ts             # Seeded demo users, datasets, requests (every role/dept)
   db/store.ts              # The "backend + database": all business logic + persistence
   services/mocks.ts        # Mocked generators: analytics, AI models, compliance, regions
+  lib/access.ts            # Group-based access rules + governance checklist definition
   lib/labels.ts            # Enum → label/color maps
-  components/              # Layout, SecurityBanner, charts, clearance timeline, UI atoms
+  components/              # Layout, SecurityBanner, charts, UI atoms
   pages/                   # Login, Marketplace, DatasetDetail, Publish, Governance,
-                           # Approvals, DataDepartment, Regulatory, Admin, Profile, MyRequests
+                           # DataDepartment, Regulatory, Admin, Profile, MyRequests
   App.tsx                  # Role-gated routing
 ```
 
-The single source of business logic is `src/db/store.ts` — auth, the
-Supervisor → Risk → Governance clearance state machine, ACL mutations, publish, and the
-heavy-model approval flow all live there, cleanly separated from the React UI.
+The single source of business logic is `src/db/store.ts` — auth, group-based access,
+the governance checklist + access-group updates, one-step request approval, publish, and
+the heavy-model approval flow all live there, cleanly separated from the React UI.
+Access rules live in `src/lib/access.ts` (`canView`).

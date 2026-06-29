@@ -8,7 +8,6 @@ import { Marketplace } from './pages/Marketplace';
 import { DatasetDetail } from './pages/DatasetDetail';
 import { Publish } from './pages/Publish';
 import { Governance } from './pages/Governance';
-import { Approvals } from './pages/Approvals';
 import { DataDepartment } from './pages/DataDepartment';
 import { Regulatory } from './pages/Regulatory';
 import { Admin } from './pages/Admin';
@@ -52,7 +51,6 @@ export default function App() {
             </RequireRole>
           }
         />
-        <Route path="/approvals" element={<Approvals />} />
         <Route
           path="/data-department"
           element={

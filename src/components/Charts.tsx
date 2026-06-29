@@ -19,7 +19,8 @@ import {
 } from 'recharts';
 import type { DatasetAnalytics, InlineModelResult } from '../types';
 
-const PALETTE = ['#2f6bff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+// Light-blue palette only (theme is blue + white).
+const PALETTE = ['#0ea5e9', '#38bdf8', '#0284c7', '#7dd3fc', '#0369a1', '#bae6fd'];
 
 export function DistributionChart({ data }: { data: DatasetAnalytics['distribution'] }) {
   return (
@@ -29,7 +30,7 @@ export function DistributionChart({ data }: { data: DatasetAnalytics['distributi
         <XAxis dataKey="label" fontSize={11} tickLine={false} axisLine={false} />
         <YAxis fontSize={11} tickLine={false} axisLine={false} />
         <Tooltip />
-        <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="#2f6bff" />
+        <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="#0ea5e9" />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -43,7 +44,7 @@ export function TrendChart({ data }: { data: DatasetAnalytics['trend'] }) {
         <XAxis dataKey="period" fontSize={11} tickLine={false} axisLine={false} />
         <YAxis fontSize={11} tickLine={false} axisLine={false} />
         <Tooltip />
-        <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="value" stroke="#0284c7" strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -82,7 +83,7 @@ export function InlineModelChart({ model }: { model: InlineModelResult }) {
               key={g}
               name={g}
               data={model.points.filter((p) => (p.group ?? 'All') === g)}
-              fill={g === 'Anomaly' ? '#ef4444' : PALETTE[i % PALETTE.length]}
+              fill={g === 'Anomaly' ? '#0c4a6e' : PALETTE[i % PALETTE.length]}
             />
           ))}
         </ScatterChart>
@@ -97,7 +98,7 @@ export function InlineModelChart({ model }: { model: InlineModelResult }) {
         <XAxis dataKey="x" fontSize={11} tickLine={false} axisLine={false} />
         <YAxis dataKey="y" fontSize={11} tickLine={false} axisLine={false} />
         <Tooltip />
-        <Line type="monotone" dataKey="y" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 2 }} />
+        <Line type="monotone" dataKey="y" stroke="#0369a1" strokeWidth={2} dot={{ r: 2 }} />
       </LineChart>
     </ResponsiveContainer>
   );

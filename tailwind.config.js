@@ -4,14 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Brand palette for the marketplace shell.
+        // Light-blue brand palette (theme is light blue + white only).
         brand: {
-          50: '#eef4ff',
-          100: '#dbe6ff',
-          500: '#2f6bff',
-          600: '#1f51e6',
-          700: '#1840b4',
-          900: '#0f2461',
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          500: '#38bdf8',
+          600: '#0ea5e9',
+          700: '#0284c7',
+          900: '#0c4a6e',
         },
       },
     },

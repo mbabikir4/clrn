@@ -141,7 +141,7 @@ export function Publish() {
           </p>
         </div>
 
-        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">
           On submit, this dataset is routed to <strong>Governance</strong> to define its access
           control list. It won't be broadly accessible until Governance publishes it.
         </div>

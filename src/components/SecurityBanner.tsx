@@ -5,7 +5,7 @@ import type { User } from '../types';
 export function SecurityBanner({ user }: { user: User }) {
   if (!user.offNetwork) return null;
   return (
-    <div className="border-b border-rose-300 bg-rose-600 text-white">
+    <div className="border-b border-brand-700 bg-brand-700 text-white">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5 text-sm">
         <span className="text-lg" aria-hidden>
           ⚠️

@@ -1,9 +1,12 @@
-// Dataset detail: metadata, ACL, auto-analytics, gated data preview, inline AI
-// models, heavy-model requests, and the consumer clearance flow.
+// Dataset detail: metadata, group-based access, auto-analytics, gated (view-only)
+// data preview, inline AI models, heavy-model requests, and a one-step access
+// request routed to Governance.
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { currentUser, hasAccess, openRequestFor, useStore, userById } from '../db/store';
+import { currentUser, openRequestFor, useStore, userById } from '../db/store';
+import { canView } from '../lib/access';
 import { runComplianceChecks } from '../services/mocks';
+import { ROLE_LABEL } from '../lib/labels';
 import {
   ClearanceBadge,
   Empty,
@@ -12,7 +15,6 @@ import {
   StatusBadge,
   UserName,
 } from '../components/ui';
-import { ClearanceTimeline } from '../components/ClearanceTimeline';
 import { CategoryPie, DistributionChart, InlineModelChart, TrendChart } from '../components/Charts';
 
 export function DatasetDetail() {
@@ -43,7 +45,7 @@ export function DatasetDetail() {
 
   const owner = userById(store.users, dataset.ownerId);
   const steward = userById(store.users, dataset.stewardId);
-  const allowed = hasAccess(dataset, user.id);
+  const allowed = canView(dataset, user);
   const openReq = openRequestFor(store.requests, dataset.id, user.id);
   const existingModelReq = store.modelRequests.find(
     (m) => m.datasetId === dataset.id && m.requesterId === user.id && m.status === 'pending',
@@ -70,6 +72,7 @@ export function DatasetDetail() {
               <h1 className="text-2xl font-bold text-slate-900">{dataset.name}</h1>
               <ClearanceBadge level={dataset.sensitivity} />
               <StatusBadge status={dataset.status} />
+              <span className="badge bg-slate-100 text-slate-600">View only</span>
             </div>
             <p className="mt-2 max-w-2xl text-slate-600">{dataset.description}</p>
             <div className="mt-3 flex flex-wrap gap-1">
@@ -82,9 +85,9 @@ export function DatasetDetail() {
           </div>
           <div className="text-right text-sm">
             {allowed ? (
-              <span className="badge bg-emerald-100 text-emerald-700">You have access</span>
+              <span className="badge bg-brand-100 text-brand-700">You have access</span>
             ) : (
-              <span className="badge bg-amber-100 text-amber-800">Access required</span>
+              <span className="badge bg-slate-100 text-slate-600">Access required</span>
             )}
           </div>
         </div>
@@ -103,14 +106,14 @@ export function DatasetDetail() {
 
       {/* Governance pending notice */}
       {dataset.status === 'PendingGovernance' && (
-        <div className="card border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          This dataset has been submitted and is <strong>awaiting Governance</strong> to define its
-          access control list. It is not broadly accessible yet.
+        <div className="card border-brand-200 bg-brand-50 p-4 text-sm text-brand-800">
+          This dataset is <strong>awaiting Governance</strong> to complete its checklist and define
+          which groups may view it. It is not in the catalog yet.
           {user.roles.includes('Governance') && (
             <>
               {' '}
               <Link to="/governance" className="font-medium underline">
-                Define access in the Governance console →
+                Open the Governance console →
               </Link>
             </>
           )}
@@ -118,28 +121,45 @@ export function DatasetDetail() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Access / ACL panel */}
+        {/* Access panel */}
         <div className="card p-6 lg:col-span-1">
-          <SectionTitle title="Access control" subtitle="Per-person ACL, governed by Governance." />
+          <SectionTitle title="Access" subtitle="Granted by department / role — not per person." />
+
           <div className="mb-4">
-            <div className="label">Who is allowed to see this data</div>
-            {dataset.acl.length === 0 ? (
-              <p className="text-sm text-slate-500">No one yet — Governance hasn't set the ACL.</p>
+            <div className="label">Who can view this data</div>
+            {dataset.allowedDepartments.length === 0 && dataset.allowedRoles.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No groups defined yet — only the owner and Governance can view.
+              </p>
             ) : (
-              <ul className="space-y-1 text-sm">
-                {dataset.acl.map((uid) => {
-                  const u = userById(store.users, uid);
-                  return (
-                    <li key={uid} className="flex items-center justify-between">
-                      <UserName user={u} id={uid} />
-                      {uid === dataset.ownerId && (
-                        <span className="badge bg-sky-100 text-sky-700">owner</span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="flex flex-wrap gap-1.5">
+                {dataset.allowedDepartments.map((dep) => (
+                  <span key={dep} className="badge bg-slate-100 text-slate-700">
+                    {dep}
+                  </span>
+                ))}
+                {dataset.allowedRoles.map((r) => (
+                  <span key={r} className="badge bg-brand-100 text-brand-700">
+                    {r === 'Consumer' ? 'All employees' : ROLE_LABEL[r]}
+                  </span>
+                ))}
+              </div>
             )}
+          </div>
+
+          {/* Governance checklist (read-only here) */}
+          <div className="mb-4">
+            <div className="label">Governance checklist</div>
+            <ul className="space-y-1 text-sm">
+              {dataset.governance.map((c) => (
+                <li key={c.key} className="flex items-start gap-2">
+                  <span className={c.done ? 'text-brand-600' : 'text-slate-300'}>
+                    {c.done ? '✓' : '○'}
+                  </span>
+                  <span className={c.done ? 'text-slate-700' : 'text-slate-400'}>{c.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="rounded-lg bg-slate-50 p-3 text-sm">
@@ -147,18 +167,16 @@ export function DatasetDetail() {
             <UserName user={steward} id={dataset.stewardId} />
           </div>
 
-          {/* Access state machine */}
+          {/* Access state */}
           <div className="mt-5">
             {allowed ? (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-                ✓ You are on the ACL — full access granted.
+              <div className="rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">
+                ✓ Your group has access — you can view this data.
               </div>
             ) : openReq ? (
-              <div>
-                <div className="mb-2 text-sm font-medium text-slate-700">
-                  Clearance request status
-                </div>
-                <ClearanceTimeline request={openReq} users={store.users} />
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+                ⏳ Access requested for <strong>{openReq.requesterDepartment}</strong> — awaiting
+                Governance approval.
               </div>
             ) : dataset.status === 'PendingGovernance' ? (
               <p className="text-sm text-slate-500">
@@ -166,9 +184,10 @@ export function DatasetDetail() {
               </p>
             ) : (
               <div>
-                <div className="mb-2 text-sm font-medium text-slate-700">Request clearance</div>
+                <div className="mb-2 text-sm font-medium text-slate-700">Request access</div>
                 <p className="mb-2 text-xs text-slate-500">
-                  Routed: Supervisor → Risk Management → Governance (who adds you to the ACL).
+                  One step: Governance reviews and, if approved, grants your department (
+                  {user.department}) access.
                 </p>
                 <textarea
                   className="input mb-2"
@@ -185,7 +204,7 @@ export function DatasetDetail() {
           </div>
         </div>
 
-        {/* Analytics (auto-generated, always visible — aggregate only) */}
+        {/* Analytics (auto-generated, aggregate, always visible) */}
         <div className="card p-6 lg:col-span-2">
           <SectionTitle
             title="Automatic analytics"
@@ -194,10 +213,7 @@ export function DatasetDetail() {
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Rows" value={dataset.analytics.rowCount.toLocaleString()} />
             <Stat label="Columns" value={String(dataset.analytics.columnCount)} />
-            <Stat
-              label="Completeness"
-              value={`${(dataset.analytics.completeness * 100).toFixed(1)}%`}
-            />
+            <Stat label="Completeness" value={`${(dataset.analytics.completeness * 100).toFixed(1)}%`} />
             <Stat label="Sensitivity" value={dataset.sensitivity} />
           </div>
           <p className="mb-4 text-sm text-slate-600">{dataset.analytics.summary}</p>
@@ -213,7 +229,6 @@ export function DatasetDetail() {
             </ChartCard>
           </div>
 
-          {/* Column profile */}
           <div className="mt-5 overflow-hidden rounded-lg border border-slate-200">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -239,29 +254,24 @@ export function DatasetDetail() {
         </div>
       </div>
 
-      {/* Gated section: raw data preview + inline models + heavy models */}
+      {/* Gated: view-only data preview + inline models + heavy models */}
       <div className="card p-6">
-        <div className="flex items-center justify-between">
-          <SectionTitle
-            title="Data preview, AI models & heavy compute"
-            subtitle="Row-level data and inline models require ACL access (and corporate network)."
-          />
-        </div>
+        <SectionTitle
+          title="Data preview, AI models & heavy compute"
+          subtitle="View-only row-level data and inline models require group access (and corporate network)."
+        />
 
         {!allowed ? (
-          <Empty>
-            🔒 Request and obtain clearance to preview row-level data and run inline AI models.
-          </Empty>
+          <Empty>🔒 Your group doesn't have access yet. Request access to preview the data.</Empty>
         ) : user.offNetwork ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-            🔒 Access blocked: you are flagged as off the corporate network. Reconnect to view
-            row-level data. (Mocked network control.)
+          <div className="rounded-lg border border-brand-300 bg-brand-100 p-4 text-sm text-brand-900">
+            🔒 Access blocked: you are flagged as off the corporate network. Reconnect to view the
+            data. (Mocked network control.)
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Sample data */}
             <div>
-              <div className="label">Sample rows (dummy data)</div>
+              <div className="label">Sample rows (dummy data, view only)</div>
               <div className="overflow-x-auto rounded-lg border border-slate-200">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -288,7 +298,6 @@ export function DatasetDetail() {
               </div>
             </div>
 
-            {/* Inline AI models */}
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <span className="label mb-0">Inline AI models</span>
@@ -307,30 +316,25 @@ export function DatasetDetail() {
               </div>
             </div>
 
-            {/* Heavy model request → Data Department */}
             <div className="rounded-lg border border-slate-200 p-4">
               <div className="mb-1 flex items-center gap-2">
                 <span className="label mb-0">Heavy / large models</span>
                 <PocStub>requires Data Dept approval</PocStub>
               </div>
               {dataset.heavyModelsEnabled.length > 0 && (
-                <div className="mb-3 text-sm text-emerald-700">
+                <div className="mb-3 text-sm text-brand-700">
                   Enabled on this dataset: {dataset.heavyModelsEnabled.join(', ')}
                 </div>
               )}
               {existingModelReq ? (
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-slate-600">
                   Your request for “{existingModelReq.modelName}” is pending Data Department review.
                 </p>
               ) : (
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="flex-1">
                     <label className="label">Model</label>
-                    <select
-                      className="input"
-                      value={modelName}
-                      onChange={(e) => setModelName(e.target.value)}
-                    >
+                    <select className="input" value={modelName} onChange={(e) => setModelName(e.target.value)}>
                       <option>Deep Churn Predictor (GPU)</option>
                       <option>Large Language Model — document summarizer</option>
                       <option>Graph Neural Network — fraud rings</option>
@@ -346,7 +350,7 @@ export function DatasetDetail() {
                   >
                     Request from Data Dept
                   </button>
-                  {requested && <span className="text-xs text-emerald-600">Submitted ✓</span>}
+                  {requested && <span className="text-xs text-brand-600">Submitted ✓</span>}
                 </div>
               )}
             </div>
@@ -354,7 +358,7 @@ export function DatasetDetail() {
         )}
       </div>
 
-      {/* Compliance summary (mocked) */}
+      {/* Compliance summary (mocked, compact) */}
       <div className="card p-6">
         <div className="flex items-center justify-between">
           <SectionTitle
@@ -364,30 +368,18 @@ export function DatasetDetail() {
           <div className="flex items-center gap-2">
             <PocStub>mocked stub</PocStub>
             {flags > 0 ? (
-              <span className="badge bg-rose-100 text-rose-700">{flags} flags</span>
+              <span className="badge bg-slate-200 text-slate-600">{flags} flag(s)</span>
             ) : (
-              <span className="badge bg-emerald-100 text-emerald-700">All clear</span>
+              <span className="badge bg-brand-100 text-brand-700">All clear</span>
             )}
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {compliance?.checks.map((c) => (
-            <div
-              key={c.control}
-              className="flex items-start gap-2 rounded-lg border border-slate-200 p-2 text-sm"
-            >
-              <span className={c.result === 'pass' ? 'text-emerald-600' : 'text-rose-600'}>
-                {c.result === 'pass' ? '✓' : '⚠'}
-              </span>
-              <div>
-                <div className="text-slate-700">{c.control}</div>
-                <div className="text-xs text-slate-400">{c.detail}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-slate-400">
-          Change the region in the <Link to="/regulatory" className="underline">Regulatory module</Link>.
+        <p className="text-sm text-slate-600">
+          {compliance?.checks.length} controls evaluated, {flags} flagged. Full breakdown in the{' '}
+          <Link to="/regulatory" className="underline">
+            Regulatory module
+          </Link>
+          .
         </p>
       </div>
     </div>

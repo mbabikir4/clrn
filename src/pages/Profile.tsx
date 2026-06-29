@@ -2,13 +2,14 @@
 // datasets the user currently has access to (per the ACLs).
 import { Link } from 'react-router-dom';
 import { currentUser, useStore, userById } from '../db/store';
+import { canView } from '../lib/access';
 import { ClearanceBadge, RoleBadge, SectionTitle, StatusBadge, UserName } from '../components/ui';
 
 export function Profile() {
   const store = useStore();
   const user = currentUser(store)!;
   const supervisor = userById(store.users, user.supervisorId);
-  const accessible = store.datasets.filter((d) => d.acl.includes(user.id));
+  const accessible = store.datasets.filter((d) => canView(d, user));
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -38,9 +39,9 @@ export function Profile() {
           </Row>
           <Row label="Network status">
             {user.offNetwork ? (
-              <span className="badge bg-rose-100 text-rose-700">Off corporate network</span>
+              <span className="badge bg-slate-200 text-slate-600">Off corporate network</span>
             ) : (
-              <span className="badge bg-emerald-100 text-emerald-700">On corporate network</span>
+              <span className="badge bg-brand-100 text-brand-700">On corporate network</span>
             )}
           </Row>
         </dl>
@@ -66,7 +67,7 @@ export function Profile() {
       <div className="card p-6 lg:col-span-2">
         <SectionTitle
           title="My data access"
-          subtitle="Datasets where you are on the access control list (ACL)."
+          subtitle="Datasets your department or role is allowed to view."
         />
         {accessible.length === 0 ? (
           <p className="text-sm text-slate-500">

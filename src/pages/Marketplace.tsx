@@ -1,7 +1,8 @@
 // Catalog of datasets with search + department/sensitivity filters.
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { currentUser, hasAccess, useStore } from '../db/store';
+import { currentUser, useStore } from '../db/store';
+import { canView } from '../lib/access';
 import { DEPARTMENTS } from '../lib/labels';
 import { ClearanceBadge, SectionTitle, StatusBadge } from '../components/ui';
 
@@ -32,7 +33,7 @@ export function Marketplace() {
     <div>
       <SectionTitle
         title="Data Marketplace"
-        subtitle="Free of charge, but never open: every dataset is governed and access is per-person."
+        subtitle="Free of charge, but never open: every dataset is governed and access is by department / role."
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -55,7 +56,7 @@ export function Marketplace() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {visible.map((d) => {
-          const allowed = hasAccess(d, user.id);
+          const allowed = canView(d, user);
           return (
             <Link
               key={d.id}
@@ -79,7 +80,7 @@ export function Marketplace() {
                 <div className="flex items-center gap-2">
                   <StatusBadge status={d.status} />
                   {allowed ? (
-                    <span className="badge bg-emerald-100 text-emerald-700">Access granted</span>
+                    <span className="badge bg-brand-100 text-brand-700">Access granted</span>
                   ) : (
                     <span className="badge bg-slate-100 text-slate-500">Access required</span>
                   )}

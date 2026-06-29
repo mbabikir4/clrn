@@ -11,21 +11,22 @@ export const ROLE_LABEL: Record<Role, string> = {
   Admin: 'Administrator',
 };
 
+// Theme is light blue + white only: badges use blue tints + neutral slate.
 export const ROLE_COLOR: Record<Role, string> = {
-  Provider: 'bg-sky-100 text-sky-700',
-  Consumer: 'bg-slate-100 text-slate-700',
-  Risk: 'bg-amber-100 text-amber-800',
-  Governance: 'bg-violet-100 text-violet-700',
-  DataDept: 'bg-emerald-100 text-emerald-700',
-  Supervisor: 'bg-blue-100 text-blue-700',
-  Admin: 'bg-rose-100 text-rose-700',
+  Provider: 'bg-brand-100 text-brand-700',
+  Consumer: 'bg-slate-100 text-slate-600',
+  Risk: 'bg-brand-100 text-brand-700',
+  Governance: 'bg-brand-100 text-brand-700',
+  DataDept: 'bg-brand-100 text-brand-700',
+  Supervisor: 'bg-slate-100 text-slate-600',
+  Admin: 'bg-brand-100 text-brand-700',
 };
 
 export const CLEARANCE_COLOR: Record<ClearanceLevel, string> = {
-  Public: 'bg-slate-100 text-slate-600',
-  Internal: 'bg-sky-100 text-sky-700',
-  Confidential: 'bg-amber-100 text-amber-800',
-  Restricted: 'bg-rose-100 text-rose-700',
+  Public: 'bg-slate-100 text-slate-500',
+  Internal: 'bg-brand-100 text-brand-700',
+  Confidential: 'bg-brand-100 text-brand-800',
+  Restricted: 'bg-brand-200 text-brand-900',
 };
 
 export const CLEARANCE_RANK: Record<ClearanceLevel, number> = {
@@ -44,3 +45,7 @@ export const DEPARTMENTS = [
 ] as const;
 
 export const SENSITIVITIES = ['Public', 'Internal', 'Confidential', 'Restricted'] as const;
+
+// Roles that Governance can grant view access to. "Consumer" effectively means
+// "all employees" (everyone holds it); the rest scope access to a function.
+export const ACCESS_ROLES: Role[] = ['Consumer', 'Risk', 'DataDept', 'Supervisor', 'Admin'];

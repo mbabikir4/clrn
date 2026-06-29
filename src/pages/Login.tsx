@@ -44,25 +44,24 @@ export function Login() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Left: brand / context */}
-      <div className="hidden flex-col justify-between bg-brand-900 p-10 text-white lg:flex">
+      <div className="hidden flex-col justify-between bg-brand-600 p-10 text-white lg:flex">
         <div className="flex items-center gap-2 text-lg font-bold">
-          <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-600">▦</span>
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/20">▦</span>
           CLR Data Marketplace
         </div>
         <div className="max-w-md">
           <h1 className="text-3xl font-bold leading-tight">
-            Governed, role-based access to internal data.
+            Governed, group-based access to internal data.
           </h1>
-          <p className="mt-4 text-brand-100">
-            Every employee can publish and consume data — but access is always governed. Datasets
-            pass through Governance, and clearance is routed Supervisor → Risk → Governance before
-            anyone is added to an access list.
+          <p className="mt-4 text-brand-50">
+            Every employee can publish and consume data — but access is always governed. Governance
+            completes a checklist and decides which departments and roles may view each dataset.
           </p>
-          <p className="mt-6 text-sm text-brand-200">
+          <p className="mt-6 text-sm text-brand-100">
             Proof of concept. All accounts, data, approvals and compliance checks are mocked.
           </p>
         </div>
-        <div className="text-xs text-brand-200">Demo password for every account: “demo”.</div>
+        <div className="text-xs text-brand-100">Demo password for every account: “demo”.</div>
       </div>
 
       {/* Right: auth form */}
@@ -93,7 +92,7 @@ export function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                {error && <p className="text-sm text-rose-600">{error}</p>}
+                {error && <p className="text-sm text-slate-700">{error}</p>}
                 <button className="btn-primary w-full" type="submit">
                   Continue
                 </button>
@@ -146,7 +145,7 @@ export function Login() {
                     onChange={(e) => setCode(e.target.value)}
                   />
                 </div>
-                {error && <p className="text-sm text-rose-600">{error}</p>}
+                {error && <p className="text-sm text-slate-700">{error}</p>}
                 <div className="flex gap-2">
                   <button className="btn-ghost flex-1" onClick={() => submit2fa(code)}>
                     Verify code

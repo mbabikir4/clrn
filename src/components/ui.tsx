@@ -11,17 +11,19 @@ export function ClearanceBadge({ level }: { level: ClearanceLevel }) {
 }
 
 export function StatusBadge({ status }: { status: string }) {
+  // Blue = active/positive, neutral slate = pending/negative (blue+white theme).
   const map: Record<string, string> = {
-    Published: 'bg-emerald-100 text-emerald-700',
-    PendingGovernance: 'bg-amber-100 text-amber-800',
-    Granted: 'bg-emerald-100 text-emerald-700',
-    Denied: 'bg-rose-100 text-rose-700',
-    Supervisor: 'bg-blue-100 text-blue-700',
-    Risk: 'bg-amber-100 text-amber-800',
-    Governance: 'bg-violet-100 text-violet-700',
-    pending: 'bg-amber-100 text-amber-800',
-    approved: 'bg-emerald-100 text-emerald-700',
-    denied: 'bg-rose-100 text-rose-700',
+    Published: 'bg-brand-100 text-brand-700',
+    PendingGovernance: 'bg-slate-100 text-slate-600',
+    Granted: 'bg-brand-100 text-brand-700',
+    Denied: 'bg-slate-200 text-slate-600',
+    Supervisor: 'bg-brand-100 text-brand-700',
+    Risk: 'bg-slate-100 text-slate-600',
+    Governance: 'bg-brand-100 text-brand-700',
+    pending: 'bg-slate-100 text-slate-600',
+    approved: 'bg-brand-100 text-brand-700',
+    granted: 'bg-brand-100 text-brand-700',
+    denied: 'bg-slate-200 text-slate-600',
   };
   const label = status === 'PendingGovernance' ? 'Pending Governance' : status;
   return <span className={`badge ${map[status] ?? 'bg-slate-100 text-slate-600'}`}>{label}</span>;
@@ -52,7 +54,7 @@ export function Empty({ children }: { children: React.ReactNode }) {
 
 export function PocStub({ children }: { children: React.ReactNode }) {
   return (
-    <span className="badge bg-yellow-100 text-yellow-800" title="Mocked for the proof-of-concept">
+    <span className="badge border border-brand-200 bg-brand-50 text-brand-700" title="Mocked for the proof-of-concept">
       {children}
     </span>
   );

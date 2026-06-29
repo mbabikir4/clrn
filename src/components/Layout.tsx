@@ -22,9 +22,7 @@ export function Layout() {
 
   // Count actionable items per role for nav badges.
   const pendingForGovernance = store.datasets.filter((d) => d.status === 'PendingGovernance').length;
-  const supervisorQueue = store.requests.filter((r) => r.currentStage === 'Supervisor').length;
-  const riskQueue = store.requests.filter((r) => r.currentStage === 'Risk').length;
-  const govQueue = store.requests.filter((r) => r.currentStage === 'Governance').length;
+  const govQueue = store.requests.filter((r) => r.status === 'pending').length;
   const modelQueue = store.modelRequests.filter((r) => r.status === 'pending').length;
 
   const items: NavItem[] = [
@@ -35,15 +33,6 @@ export function Layout() {
       to: '/governance',
       label: `Governance${pendingForGovernance + govQueue ? ` (${pendingForGovernance + govQueue})` : ''}`,
       show: hasRole(user, 'Governance'),
-    },
-    {
-      to: '/approvals',
-      label: `Approvals${
-        (hasRole(user, 'Supervisor') ? supervisorQueue : 0) + (hasRole(user, 'Risk') ? riskQueue : 0)
-          ? ` (${(hasRole(user, 'Supervisor') ? supervisorQueue : 0) + (hasRole(user, 'Risk') ? riskQueue : 0)})`
-          : ''
-      }`,
-      show: hasRole(user, 'Supervisor') || hasRole(user, 'Risk'),
     },
     {
       to: '/data-department',

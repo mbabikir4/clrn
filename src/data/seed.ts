@@ -6,16 +6,17 @@
 import type {
   AccessRequest,
   AuditEntry,
+  ChecklistItem,
   Dataset,
   ModelRequest,
   User,
 } from '../types';
+import { GOVERNANCE_CHECKLIST } from '../lib/access';
 import { generateAnalytics, generateInlineModels, generateSampleRows } from '../services/mocks';
 
 // --- Users -----------------------------------------------------------------
 // Password for every demo account is "demo".
 export const seedUsers: User[] = [
-  // Front-line employees (provider + consumer)
   {
     id: 'WID-1001',
     name: 'Sarah Al-Otaibi',
@@ -47,7 +48,7 @@ export const seedUsers: User[] = [
     department: 'Investment Banking',
     supervisorId: 'WID-1011',
     clearance: 'Confidential',
-    offNetwork: true, // demo: flagged as off the corporate network
+    offNetwork: true, // demo: flagged off the corporate network
   },
   {
     id: 'WID-1004',
@@ -60,7 +61,7 @@ export const seedUsers: User[] = [
     clearance: 'Restricted',
     offNetwork: false,
   },
-  // Supervisors / managers (gate #1)
+  // Managers (org structure only — no longer an approval gate)
   {
     id: 'WID-1010',
     name: 'Faisal Al-Mutairi',
@@ -83,7 +84,7 @@ export const seedUsers: User[] = [
     clearance: 'Confidential',
     offNetwork: false,
   },
-  // Risk Management (gate #2)
+  // Risk Management (a department/role that data can be shared with)
   {
     id: 'WID-2001',
     name: 'Omar Al-Zahrani',
@@ -95,7 +96,7 @@ export const seedUsers: User[] = [
     clearance: 'Restricted',
     offNetwork: false,
   },
-  // Governance (heart of access control — sets ACLs, final approval)
+  // Governance (defines access groups + checklist; approves requests)
   {
     id: 'WID-3001',
     name: 'Reem Al-Shehri',
@@ -131,7 +132,6 @@ export const seedUsers: User[] = [
     clearance: 'Restricted',
     offNetwork: false,
   },
-  // Top-of-tree manager (supervisor of supervisors)
   {
     id: 'WID-1099',
     name: 'Abdullah Al-Faisal',
@@ -146,16 +146,24 @@ export const seedUsers: User[] = [
 ];
 
 // --- Datasets --------------------------------------------------------------
-// Helper to assemble a dataset with auto-generated mock artifacts.
+function checklist(done: boolean): ChecklistItem[] {
+  return GOVERNANCE_CHECKLIST.map((c) => ({ ...c, done }));
+}
+
 function buildDataset(
-  base: Omit<Dataset, 'analytics' | 'inlineModels' | 'sampleRows' | 'sampleColumns'> & {
+  base: Omit<
+    Dataset,
+    'analytics' | 'inlineModels' | 'sampleRows' | 'sampleColumns' | 'governance'
+  > & {
     columns: string[];
+    governanceDone: boolean;
   },
 ): Dataset {
-  const { columns, ...rest } = base;
+  const { columns, governanceDone, ...rest } = base;
   const sample = generateSampleRows(base.id, columns);
   return {
     ...rest,
+    governance: checklist(governanceDone),
     analytics: generateAnalytics(base.id, columns),
     inlineModels: generateInlineModels(base.id),
     sampleColumns: sample.columns,
@@ -176,9 +184,11 @@ export const seedDatasets: Dataset[] = [
     createdAt: '2026-05-02T09:00:00.000Z',
     tags: ['customers', 'accounts', 'loans', 'mortgages'],
     status: 'Published',
-    acl: ['WID-1001', 'WID-1010', 'WID-3001'],
+    allowedDepartments: ['Retail Banking', 'Risk Management'],
+    allowedRoles: [],
     heavyModelsEnabled: [],
     columns: ['customer_id', 'account_balance', 'loan_amount', 'credit_score', 'tenure_months'],
+    governanceDone: true,
   }),
   buildDataset({
     id: 'DS-002',
@@ -191,9 +201,11 @@ export const seedDatasets: Dataset[] = [
     createdAt: '2026-05-10T09:00:00.000Z',
     tags: ['credit', 'business', 'loans'],
     status: 'Published',
-    acl: ['WID-1002', 'WID-3001'],
+    allowedDepartments: ['Commercial Banking', 'Risk Management'],
+    allowedRoles: [],
     heavyModelsEnabled: [],
     columns: ['company_id', 'credit_line', 'utilization', 'industry_code', 'risk_grade'],
+    governanceDone: true,
   }),
   buildDataset({
     id: 'DS-003',
@@ -206,9 +218,11 @@ export const seedDatasets: Dataset[] = [
     createdAt: '2026-05-18T09:00:00.000Z',
     tags: ['m&a', 'capital-markets', 'deals'],
     status: 'Published',
-    acl: ['WID-1003', 'WID-3001'],
+    allowedDepartments: ['Investment Banking'],
+    allowedRoles: [],
     heavyModelsEnabled: [],
     columns: ['deal_id', 'sector', 'deal_value_musd', 'stage', 'probability'],
+    governanceDone: true,
   }),
   buildDataset({
     id: 'DS-004',
@@ -222,9 +236,11 @@ export const seedDatasets: Dataset[] = [
     createdAt: '2026-06-01T09:00:00.000Z',
     tags: ['wealth', 'portfolio', 'hnw'],
     status: 'Published',
-    acl: ['WID-1004', 'WID-3001'],
+    allowedDepartments: ['Wealth Management'],
+    allowedRoles: [],
     heavyModelsEnabled: [],
     columns: ['client_id', 'aum_musd', 'risk_appetite', 'portfolio_return', 'advisor_id'],
+    governanceDone: true,
   }),
   buildDataset({
     id: 'DS-005',
@@ -237,9 +253,11 @@ export const seedDatasets: Dataset[] = [
     createdAt: '2026-06-08T09:00:00.000Z',
     tags: ['risk', 'credit', 'capital'],
     status: 'Published',
-    acl: ['WID-2001', 'WID-3001'],
+    allowedDepartments: ['Risk Management'],
+    allowedRoles: [],
     heavyModelsEnabled: [],
     columns: ['exposure_id', 'pd', 'lgd', 'ead', 'capital_charge'],
+    governanceDone: true,
   }),
   buildDataset({
     id: 'DS-006',
@@ -253,36 +271,30 @@ export const seedDatasets: Dataset[] = [
     createdAt: '2026-06-20T09:00:00.000Z',
     tags: ['mortgages', 'default', 'early-warning'],
     status: 'PendingGovernance', // demonstrates the pre-publish governance gate
-    acl: [],
+    allowedDepartments: [],
+    allowedRoles: [],
     heavyModelsEnabled: [],
     columns: ['loan_id', 'months_delinquent', 'ltv', 'dti', 'default_flag'],
+    governanceDone: false,
   }),
 ];
 
-// --- An in-flight access request (demonstrates the clearance queue) ---------
+// --- A pending one-step access request (Governance queue) -------------------
 export const seedRequests: AccessRequest[] = [
   {
     id: 'REQ-001',
-    datasetId: 'DS-003', // Khalid (Commercial) wants the M&A pipeline
+    datasetId: 'DS-003', // Commercial wants the (Investment-only) M&A pipeline
     requesterId: 'WID-1002',
+    requesterDepartment: 'Commercial Banking',
     reason: 'Cross-sell analysis between commercial clients and active M&A targets.',
-    currentStage: 'Risk',
+    status: 'pending',
+    decidedBy: null,
+    note: '',
     createdAt: '2026-06-22T08:00:00.000Z',
-    steps: [
-      {
-        stage: 'Supervisor',
-        decidedBy: 'WID-1010',
-        decision: 'approved',
-        note: 'Legitimate business need — approved.',
-        decidedAt: '2026-06-22T10:00:00.000Z',
-      },
-      { stage: 'Risk', decidedBy: null, decision: 'pending', note: '', decidedAt: null },
-      { stage: 'Governance', decidedBy: null, decision: 'pending', note: '', decidedAt: null },
-    ],
   },
 ];
 
-// --- A pending heavy-model request (demonstrates the Data Dept queue) -------
+// --- A pending heavy-model request (Data Dept queue) -----------------------
 export const seedModelRequests: ModelRequest[] = [
   {
     id: 'MRQ-001',
@@ -299,9 +311,9 @@ export const seedModelRequests: ModelRequest[] = [
 export const seedAudit: AuditEntry[] = [
   {
     id: 'AUD-001',
-    at: '2026-06-22T10:00:00.000Z',
-    actorId: 'WID-1010',
-    action: 'Approved supervisor sign-off',
-    target: 'REQ-001',
+    at: '2026-06-22T08:00:00.000Z',
+    actorId: 'WID-1002',
+    action: 'Requested access',
+    target: 'DS-003',
   },
 ];
