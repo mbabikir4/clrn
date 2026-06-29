@@ -164,8 +164,9 @@ configurable** and defaults to a **Saudi Arabia (SAMA / PDPL)** profile; EU (GDP
 
 ## Security awareness (all mocked, but visibly present)
 - **Role-based access** enforced on every nav item, route, and action.
-- **Group checks before any row-level data access** — aggregate analytics are visible in the
-  catalog, but view-only raw data + inline models require your department/role to be allowed.
+- **Group checks before any data access** — without access you see only the dataset's
+  description, who can view it, and the governance checklist; the analytics, view-only data
+  preview, and AI models are hidden until your department/role is allowed.
 - **Mocked 2FA** step on login.
 - **Mocked network alert** — a prominent banner when a user is flagged off the corporate
   network; row-level data access is blocked while off-network. Toggle it on **Profile** or in

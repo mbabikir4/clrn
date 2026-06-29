@@ -14,7 +14,7 @@ export function DataDepartment() {
     <div className="space-y-6">
       <SectionTitle
         title="Data Department"
-        subtitle="Approve heavy / large AI models requested by consumers on specific datasets."
+        subtitle="Approve heavy AI models per dataset."
       />
 
       <div className="card p-6">

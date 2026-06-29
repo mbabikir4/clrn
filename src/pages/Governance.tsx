@@ -22,14 +22,14 @@ export function Governance() {
     <div className="space-y-6">
       <SectionTitle
         title="Governance console"
-        subtitle="Tick the governance checklist and choose which groups may view each dataset. Access is by department / role — never per person."
+        subtitle="Checklist + who can view each dataset."
       />
 
       {/* 1. Awaiting governance */}
       <div className="card p-6">
         <h3 className="mb-1 font-semibold text-slate-900">Awaiting governance</h3>
         <p className="mb-4 text-sm text-slate-500">
-          New submissions. Complete the checklist, define access groups, then publish.
+          Complete the checklist, set access, publish.
         </p>
         {pending.length === 0 ? (
           <Empty>Nothing waiting for Governance.</Empty>
@@ -46,7 +46,7 @@ export function Governance() {
       <div className="card p-6">
         <h3 className="mb-1 font-semibold text-slate-900">Access requests</h3>
         <p className="mb-4 text-sm text-slate-500">
-          Approving grants the requester's whole department access to the dataset.
+          Approving grants the requester's department.
         </p>
         {requests.length === 0 ? (
           <Empty>No pending access requests.</Empty>
@@ -93,7 +93,7 @@ export function Governance() {
       {/* 3. Published datasets — manage groups + checklist */}
       <div className="card p-6">
         <h3 className="mb-1 font-semibold text-slate-900">Published datasets</h3>
-        <p className="mb-4 text-sm text-slate-500">Adjust access groups or revisit the checklist anytime.</p>
+        <p className="mb-4 text-sm text-slate-500">Adjust access or checklist anytime.</p>
         <div className="space-y-4">
           {published.map((d) => (
             <GovDatasetCard key={d.id} dataset={d} byUserId={me.id} />

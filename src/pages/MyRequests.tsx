@@ -13,7 +13,7 @@ export function MyRequests() {
     <div className="space-y-6">
       <SectionTitle
         title="My requests"
-        subtitle="Access requests are reviewed by Governance in a single step."
+        subtitle="Reviewed by Governance."
       />
 
       <div className="card p-6">

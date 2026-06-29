@@ -11,7 +11,7 @@ export function Admin() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <SectionTitle title="Administration" subtitle="Users, network flags and the security audit log." />
+        <SectionTitle title="Administration" subtitle="Users, network flags, audit log." />
         <button
           className="btn-ghost"
           onClick={() => {

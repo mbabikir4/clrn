@@ -22,7 +22,7 @@ export function Regulatory() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <SectionTitle
           title="Regulatory & Compliance"
-          subtitle="Mocked pass/flag controls per dataset."
+          subtitle="Mocked pass/flag checks."
         />
         <div className="flex items-center gap-2">
           <PocStub>PoC stub — no real checks</PocStub>

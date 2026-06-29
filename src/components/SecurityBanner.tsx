@@ -11,10 +11,10 @@ export function SecurityBanner({ user }: { user: User }) {
           ⚠️
         </span>
         <p className="font-medium">
-          Security alert: you appear to be <strong>off the corporate network</strong>. Company data
-          must only be accessed while connected to the corporate network on-premises.
+          You appear to be <strong>off the corporate network</strong>. Connect on-premises to access
+          company data.
         </p>
-        <span className="ml-auto rounded bg-white/20 px-2 py-0.5 text-xs">Mocked detection</span>
+        <span className="ml-auto rounded bg-white/20 px-2 py-0.5 text-xs">Mocked</span>
       </div>
     </div>
   );

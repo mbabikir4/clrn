@@ -120,8 +120,7 @@ export function Layout() {
       </main>
 
       <footer className="mx-auto max-w-7xl px-4 py-8 text-center text-xs text-slate-400">
-        CLR Data Marketplace — proof of concept. All data, users, approvals, analytics, AI results
-        and compliance checks are mocked. Not for production use.
+        CLR Data Marketplace — proof of concept. All data is mocked.
       </footer>
     </div>
   );

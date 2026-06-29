@@ -51,7 +51,7 @@ export function Publish() {
     <div className="mx-auto max-w-3xl">
       <SectionTitle
         title="Publish a dataset"
-        subtitle="Upload or pick sample data and declare its metadata. Governance defines access before it goes live."
+        subtitle="Add metadata. Governance defines access before it goes live."
       />
 
       <form onSubmit={submit} className="card space-y-5 p-6">
@@ -113,7 +113,7 @@ export function Publish() {
             ))}
           </select>
           <p className="mt-1 text-xs text-slate-500">
-            Named individual accountable for clearing access to this dataset.
+            Person accountable for clearing access.
           </p>
         </div>
 
@@ -136,14 +136,12 @@ export function Publish() {
           </div>
           <input className="input" value={columns} onChange={(e) => setColumns(e.target.value)} />
           <p className="mt-1 text-xs text-slate-500">
-            Analytics, charts and inline AI models are generated automatically from these columns
-            (mocked).
+            Analytics and AI are auto-generated from these columns (mocked).
           </p>
         </div>
 
         <div className="rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">
-          On submit, this dataset is routed to <strong>Governance</strong> to define its access
-          control list. It won't be broadly accessible until Governance publishes it.
+          On submit, this goes to <strong>Governance</strong> to set access before it's published.
         </div>
 
         <div className="flex justify-end gap-2">

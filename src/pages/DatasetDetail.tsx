@@ -97,7 +97,7 @@ export function DatasetDetail() {
           <Meta label="Published by">
             <UserName user={owner} id={dataset.ownerId} />
           </Meta>
-          <Meta label="Responsible for clearing (steward)">
+          <Meta label="Steward (clears access)">
             <UserName user={steward} id={dataset.stewardId} />
           </Meta>
           <Meta label="Created">{new Date(dataset.createdAt).toLocaleDateString()}</Meta>
@@ -120,10 +120,10 @@ export function DatasetDetail() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className={`grid gap-6 ${allowed ? 'lg:grid-cols-3' : 'max-w-xl'}`}>
         {/* Access panel */}
         <div className="card p-6 lg:col-span-1">
-          <SectionTitle title="Access" subtitle="Granted by department / role — not per person." />
+          <SectionTitle title="Access" subtitle="By department or role." />
 
           <div className="mb-4">
             <div className="label">Who can view this data</div>
@@ -163,7 +163,7 @@ export function DatasetDetail() {
           </div>
 
           <div className="rounded-lg bg-slate-50 p-3 text-sm">
-            <div className="label mb-1">Responsible for clearing</div>
+            <div className="label mb-1">Steward</div>
             <UserName user={steward} id={dataset.stewardId} />
           </div>
 
@@ -171,28 +171,24 @@ export function DatasetDetail() {
           <div className="mt-5">
             {allowed ? (
               <div className="rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">
-                ✓ Your group has access — you can view this data.
+                ✓ Your group has access.
               </div>
             ) : openReq ? (
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                ⏳ Access requested for <strong>{openReq.requesterDepartment}</strong> — awaiting
-                Governance approval.
+                ⏳ Requested for <strong>{openReq.requesterDepartment}</strong> — awaiting Governance.
               </div>
             ) : dataset.status === 'PendingGovernance' ? (
-              <p className="text-sm text-slate-500">
-                You can request access once Governance has published this dataset.
-              </p>
+              <p className="text-sm text-slate-500">Awaiting Governance to publish.</p>
             ) : (
               <div>
                 <div className="mb-2 text-sm font-medium text-slate-700">Request access</div>
                 <p className="mb-2 text-xs text-slate-500">
-                  One step: Governance reviews and, if approved, grants your department (
-                  {user.department}) access.
+                  Governance reviews; if approved, {user.department} gets access.
                 </p>
                 <textarea
                   className="input mb-2"
-                  rows={3}
-                  placeholder="Business justification…"
+                  rows={2}
+                  placeholder="Reason…"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                 />
@@ -204,12 +200,10 @@ export function DatasetDetail() {
           </div>
         </div>
 
-        {/* Analytics (auto-generated, aggregate, always visible) */}
+        {/* Analytics — only shown to users who can access the data */}
+        {allowed && (
         <div className="card p-6 lg:col-span-2">
-          <SectionTitle
-            title="Automatic analytics"
-            subtitle="Generated automatically on upload — no manual pipeline."
-          />
+          <SectionTitle title="Analytics" subtitle="Auto-generated on upload." />
           <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Rows" value={dataset.analytics.rowCount.toLocaleString()} />
             <Stat label="Columns" value={String(dataset.analytics.columnCount)} />
@@ -252,26 +246,22 @@ export function DatasetDetail() {
             </table>
           </div>
         </div>
+        )}
       </div>
 
-      {/* Gated: view-only data preview + inline models + heavy models */}
+      {/* Data preview + AI — only shown to users who can access the data */}
+      {allowed && (
       <div className="card p-6">
-        <SectionTitle
-          title="Data preview, AI models & heavy compute"
-          subtitle="View-only row-level data and inline models require group access (and corporate network)."
-        />
+        <SectionTitle title="Data, AI models & heavy compute" subtitle="View only." />
 
-        {!allowed ? (
-          <Empty>🔒 Your group doesn't have access yet. Request access to preview the data.</Empty>
-        ) : user.offNetwork ? (
+        {user.offNetwork ? (
           <div className="rounded-lg border border-brand-300 bg-brand-100 p-4 text-sm text-brand-900">
-            🔒 Access blocked: you are flagged as off the corporate network. Reconnect to view the
-            data. (Mocked network control.)
+            🔒 Blocked: you're off the corporate network. Reconnect to view the data. (Mocked.)
           </div>
         ) : (
           <div className="space-y-6">
             <div>
-              <div className="label">Sample rows (dummy data, view only)</div>
+              <div className="label">Sample rows</div>
               <div className="overflow-x-auto rounded-lg border border-slate-200">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
@@ -302,7 +292,6 @@ export function DatasetDetail() {
               <div className="mb-2 flex items-center gap-2">
                 <span className="label mb-0">Inline AI models</span>
                 <PocStub>mocked</PocStub>
-                <span className="text-xs text-slate-400">Run automatically on the dataset.</span>
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 {dataset.inlineModels.map((m) => (
@@ -357,30 +346,27 @@ export function DatasetDetail() {
           </div>
         )}
       </div>
+      )}
 
       {/* Compliance summary (mocked, compact) */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between">
-          <SectionTitle
-            title="Regulatory & compliance"
-            subtitle={`${compliance?.region} • ${compliance?.profile} profile`}
-          />
-          <div className="flex items-center gap-2">
-            <PocStub>mocked stub</PocStub>
-            {flags > 0 ? (
-              <span className="badge bg-slate-200 text-slate-600">{flags} flag(s)</span>
-            ) : (
-              <span className="badge bg-brand-100 text-brand-700">All clear</span>
-            )}
-          </div>
+      <div className="card flex flex-wrap items-center justify-between gap-2 p-6">
+        <div>
+          <h2 className="font-semibold text-slate-900">Compliance</h2>
+          <p className="text-sm text-slate-500">
+            {compliance?.profile} • {flags} flag(s) of {compliance?.checks.length}.{' '}
+            <Link to="/regulatory" className="underline">
+              Details
+            </Link>
+          </p>
         </div>
-        <p className="text-sm text-slate-600">
-          {compliance?.checks.length} controls evaluated, {flags} flagged. Full breakdown in the{' '}
-          <Link to="/regulatory" className="underline">
-            Regulatory module
-          </Link>
-          .
-        </p>
+        <div className="flex items-center gap-2">
+          <PocStub>mocked</PocStub>
+          {flags > 0 ? (
+            <span className="badge bg-slate-200 text-slate-600">{flags} flag(s)</span>
+          ) : (
+            <span className="badge bg-brand-100 text-brand-700">All clear</span>
+          )}
+        </div>
       </div>
     </div>
   );

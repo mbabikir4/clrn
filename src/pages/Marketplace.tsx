@@ -33,7 +33,7 @@ export function Marketplace() {
     <div>
       <SectionTitle
         title="Data Marketplace"
-        subtitle="Free of charge, but never open: every dataset is governed and access is by department / role."
+        subtitle="Browse and request governed datasets."
       />
 
       <div className="mb-5 flex flex-wrap items-center gap-3">

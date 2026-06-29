@@ -67,15 +67,15 @@ export function Profile() {
       <div className="card p-6 lg:col-span-2">
         <SectionTitle
           title="My data access"
-          subtitle="Datasets your department or role is allowed to view."
+          subtitle="Datasets you can view."
         />
         {accessible.length === 0 ? (
           <p className="text-sm text-slate-500">
-            You currently have access to no datasets. Browse the{' '}
+            No datasets yet. Browse the{' '}
             <Link to="/marketplace" className="text-brand-600 underline">
               marketplace
             </Link>{' '}
-            and request clearance.
+            to request access.
           </p>
         ) : (
           <div className="overflow-hidden rounded-lg border border-slate-200">
